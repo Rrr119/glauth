@@ -9,6 +9,8 @@ type (
 		Datastore                 string
 		Insecure                  bool     // For LDAP and owncloud backend only
 		Servers                   []string // For LDAP and owncloud backend only
+		File                      string   // For file (JSON) backend only: path to the directory data file
+		WatchFile                 bool     // For file (JSON) backend only: reload the data file on change
 		NameFormat                string   // e.g. cn, ou, uid, or a comma separated list of them
 		NameFormatAsArray         []string // we will explode NameFormat on commas
 		GroupFormat               string   // e.g. cn, ou, gid, or a comma separated list of them
@@ -97,7 +99,7 @@ type (
 		PassBcrypt    string
 		PassAppSHA256 []string
 		PassAppBcrypt []string
-		PassAppCustom UserAuthenticator `toml:"-"`
+		PassAppCustom UserAuthenticator `toml:"-" json:"-"`
 		PrimaryGroup  int
 		Capabilities  []Capability
 		SSHKeys       []string
@@ -145,6 +147,7 @@ type (
 		LDAPS              LDAPS
 		Groups             []Group
 		Users              []User
+		FileLoadedAt       time.Time // For file backend only: last successful data-file load
 		Tracing            Tracing
 		ConfigFile         string
 		AwsAccessKeyId     string

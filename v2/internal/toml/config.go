@@ -464,12 +464,19 @@ func validateConfig(cfg *config.Config) (*config.Config, error) {
 		case "":
 			cfg.Backends[i].Datastore = "config"
 		case "config":
+		case "file":
 		case "ldap":
 		case "owncloud":
 		case "plugin":
 		case "embed":
 		default:
-			return cfg, fmt.Errorf("invalid backend %s - must be 'config', 'ldap', 'owncloud', 'plugin' or 'embed", cfg.Backends[i].Datastore)
+			return cfg, fmt.Errorf("invalid backend %s - must be 'config', 'file', 'ldap', 'owncloud', 'plugin' or 'embed", cfg.Backends[i].Datastore)
+		}
+	}
+
+	for i := range cfg.Backends {
+		if cfg.Backends[i].Datastore == "file" && cfg.Backends[i].File == "" {
+			return cfg, fmt.Errorf("backend %d uses the 'file' datastore but no 'file' path was configured", i)
 		}
 	}
 

@@ -147,6 +147,19 @@ func NewServer(opts ...Option) (*LdapSvc, error) {
 				handler.Monitor(s.monitor),
 				handler.Tracer(s.tracer),
 			)
+		case "file":
+			h, err = handler.NewFileHandler(
+				handler.Backend(backend),
+				handler.Logger(&s.log),
+				handler.Config(s.c),
+				handler.YubiAuth(s.yubiAuth),
+				handler.LDAPHelper(loh),
+				handler.Monitor(s.monitor),
+				handler.Tracer(s.tracer),
+			)
+			if err != nil {
+				return nil, err
+			}
 		case "plugin":
 			plug, err := plugin.Open(backend.Plugin)
 			if err != nil {
@@ -186,7 +199,7 @@ func NewServer(opts ...Option) (*LdapSvc, error) {
 				return nil, err
 			}
 		default:
-			return nil, fmt.Errorf("unsupported backend %s - must be one of 'config', 'ldap','owncloud' or 'plugin'", backend.Datastore)
+			return nil, fmt.Errorf("unsupported backend %s - must be one of 'config', 'file', 'ldap','owncloud' or 'plugin'", backend.Datastore)
 		}
 		s.log.Info().Str("datastore", backend.Datastore).Int("position", i).Msg("Loading backend")
 

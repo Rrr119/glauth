@@ -321,30 +321,17 @@ func (h configHandler) getGroupMemberDNs(ctx context.Context, gid int) []string 
 		insertOuUsers = ",ou=users"
 	}
 	members := make(map[string]bool)
+	effectiveGIDs := mapIntSliceToSet(ExpandIncludedGroups(h.cfg.Groups, []int{gid}))
 	for _, u := range h.cfg.Users {
-		if u.PrimaryGroup == gid {
+		if effectiveGIDs[u.PrimaryGroup] {
 			dn := fmt.Sprintf("%s=%s,%s=%s%s,%s", h.backend.NameFormatAsArray[0], u.Name, h.backend.GroupFormatAsArray[0], h.getGroupName(ctx, u.PrimaryGroup), insertOuUsers, h.backend.BaseDN)
 			members[dn] = true
-		} else {
-			for _, othergid := range u.OtherGroups {
-				if othergid == gid {
-					dn := fmt.Sprintf("%s=%s,%s=%s%s,%s", h.backend.NameFormatAsArray[0], u.Name, h.backend.GroupFormatAsArray[0], h.getGroupName(ctx, u.PrimaryGroup), insertOuUsers, h.backend.BaseDN)
-					members[dn] = true
-				}
-			}
+			continue
 		}
-	}
-
-	for _, g := range h.cfg.Groups {
-		if gid == g.GIDNumber {
-			for _, includegroupid := range g.IncludeGroups {
-				if includegroupid != gid {
-					includegroupmembers := h.getGroupMemberDNs(ctx, includegroupid)
-
-					for _, includegroupmember := range includegroupmembers {
-						members[includegroupmember] = true
-					}
-				}
+		for _, othergid := range u.OtherGroups {
+			if effectiveGIDs[othergid] {
+				dn := fmt.Sprintf("%s=%s,%s=%s%s,%s", h.backend.NameFormatAsArray[0], u.Name, h.backend.GroupFormatAsArray[0], h.getGroupName(ctx, u.PrimaryGroup), insertOuUsers, h.backend.BaseDN)
+				members[dn] = true
 			}
 		}
 	}
@@ -364,30 +351,15 @@ func (h configHandler) getGroupMemberIDs(ctx context.Context, gid int) []string 
 	defer span.End()
 
 	members := make(map[string]bool)
+	effectiveGIDs := mapIntSliceToSet(ExpandIncludedGroups(h.cfg.Groups, []int{gid}))
 	for _, u := range h.cfg.Users {
-		if u.PrimaryGroup == gid {
+		if effectiveGIDs[u.PrimaryGroup] {
 			members[u.Name] = true
-		} else {
-			for _, othergid := range u.OtherGroups {
-				if othergid == gid {
-					members[u.Name] = true
-				}
-			}
+			continue
 		}
-	}
-
-	for _, g := range h.cfg.Groups {
-		if gid == g.GIDNumber {
-			for _, includegroupid := range g.IncludeGroups {
-				if includegroupid == gid {
-					h.log.Warn().Int("groupid", includegroupid).Msg("Ignoring myself as included group")
-				} else {
-					includegroupmemberids := h.getGroupMemberIDs(ctx, includegroupid)
-
-					for _, includegroupmemberid := range includegroupmemberids {
-						members[includegroupmemberid] = true
-					}
-				}
+		for _, othergid := range u.OtherGroups {
+			if effectiveGIDs[othergid] {
+				members[u.Name] = true
 			}
 		}
 	}
@@ -408,23 +380,13 @@ func (h configHandler) getGroupDNs(ctx context.Context, gids []int) []string {
 	defer span.End()
 
 	groups := make(map[string]bool)
-	for _, gid := range gids {
-		for _, g := range h.cfg.Groups {
-			if g.GIDNumber == gid {
-				dn := fmt.Sprintf("%s=%s,ou=groups,%s", h.backend.GroupFormatAsArray[0], g.Name, h.backend.BaseDN)
-				groups[dn] = true
-			}
-
-			for _, includegroupid := range g.IncludeGroups {
-				if includegroupid == gid && g.GIDNumber != gid {
-					includegroupdns := h.getGroupDNs(ctx, []int{g.GIDNumber})
-
-					for _, includegroupdn := range includegroupdns {
-						groups[includegroupdn] = true
-					}
-				}
-			}
+	effectiveGIDs := mapIntSliceToSet(ExpandParentGroups(h.cfg.Groups, gids))
+	for _, g := range h.cfg.Groups {
+		if !effectiveGIDs[g.GIDNumber] {
+			continue
 		}
+		dn := fmt.Sprintf("%s=%s,ou=groups,%s", h.backend.GroupFormatAsArray[0], g.Name, h.backend.BaseDN)
+		groups[dn] = true
 	}
 
 	g := []string{}

@@ -1,0 +1,46 @@
+{
+  "groups": [
+    {
+      "name": "svcaccts",
+      "gidnumber": 5501
+    },
+    {
+      "name": "superheros",
+      "gidnumber": 5502
+    },
+    {
+      "name": "vips",
+      "gidnumber": 5503,
+      "includegroups": [5502]
+    },
+    {
+      "name": "everyone",
+      "gidnumber": 5504,
+      "includegroups": [5501, 5503]
+    }
+  ],
+  "users": [
+    {
+      "name": "serviceuser",
+      "uidnumber": 5001,
+      "primarygroup": 5501,
+      "passsha256": "652c7dc687d98c9889304ed2e408c74b611e86a40caa51c4b43f1dd5913c5cd0",
+      "othergroups": [],
+      "capabilities": [
+        {
+          "action": "search",
+          "object": "*"
+        }
+      ]
+    },
+    {
+      "name": "hackers",
+      "uidnumber": 5002,
+      "primarygroup": 5502,
+      "passsha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mail": "hackers@example.com",
+      "givenname": "Hedy",
+      "sn": "Lovelace"
+    }
+  ]
+}
